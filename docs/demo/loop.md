@@ -1,5 +1,7 @@
 # Agent loop 규칙
 
+> 예비 방법입니다. 기본 데모는 Issue Radar crew 2개로 돌립니다(`docs/demo/setup.md` 3번). 이 문서는 crew 대신 cron poller와 orchestrator 채팅 하나로 같은 흐름을 돌릴 때 씁니다. 이 경우 #3의 `blocked` 대신 계획 단계가 순서를 정합니다.
+
 이 문서는 orchestrator 세션(Kiro Crew 대시보드 채팅 하나)이 따르는 규칙입니다. 구현과 리뷰는 subagent가 하고, orchestrator는 이슈 사이의 순서와 PR 이벤트 처리만 맡습니다.
 
 ## 한 화면 요약

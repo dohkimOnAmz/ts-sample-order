@@ -1,5 +1,5 @@
 <!-- title: 배송 목록 API에 pagination 추가 -->
-<!-- labels: agent-ok, enhancement -->
+<!-- labels: blocked, enhancement (blocked by the list-orders issue) -->
 
 ## 현상
 
