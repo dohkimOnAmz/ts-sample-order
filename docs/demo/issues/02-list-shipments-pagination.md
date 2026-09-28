@@ -13,6 +13,7 @@
 ## 정해진 것
 
 - 이 변경은 maintainer가 승인했습니다. AGENTS.md의 pagination 규칙을 배송 목록에도 적용하는 것입니다.
+- 주문 목록 API(#{{LIST_ORDERS_ISSUE}})에서 만드는 pagination 구현과 `nextToken` 형식을 그대로 씁니다. 배송 목록용으로 따로 만들지 않습니다.
 - 응답의 `shipments` 필드는 그대로 두고 `nextToken`만 추가하므로, 기존 클라이언트는 그대로 동작합니다.
 
 ## 완료 조건

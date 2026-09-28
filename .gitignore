@@ -4,5 +4,6 @@ coverage/
 dist/
 .npm/
 .tmp/
+.kiro/settings/
 *.log
 .DS_Store

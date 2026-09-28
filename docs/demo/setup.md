@@ -2,19 +2,27 @@
 
 Remote: `git@github.com:dohkimOnAmz/ts-sample-order.git`
 
-## 1. Labels and issues (GitHub CLI)
+## 1. Labels, issues and branch protection (GitHub CLI)
 
 ```bash
-gh label create agent-ok --color 428BCA -R dohkimOnAmz/ts-sample-order
-gh label create in-progress --color F0AD4E -R dohkimOnAmz/ts-sample-order
+R=dohkimOnAmz/ts-sample-order
+gh label create agent-ok --color 428BCA -R $R --description "Agent may pick this up"
+gh label create in-progress --color F0AD4E -R $R
+gh label create needs-human --color D9534F -R $R --description "Agent handed this back"
 
-# issue #1 now; issue #2 only after #1 is merged, so the second run starts from the fixed code
-gh issue create -R dohkimOnAmz/ts-sample-order -l agent-ok,bug \
-  -t "주문 목록 API가 느리고 일부 주문이 목록에서 빠짐" \
-  --body "$(sed '1,2d' docs/demo/issues/01-list-orders-scan.md)"
-gh issue create -R dohkimOnAmz/ts-sample-order -l agent-ok,enhancement \
-  -t "배송 목록 API에 pagination 추가" \
-  --body "$(sed '1,2d' docs/demo/issues/02-list-shipments-pagination.md)"
+# A. list-orders (bug), B. create-order quantity (bug), C. list-shipments pagination (depends on A)
+A=$(gh issue create -R $R -l agent-ok,bug -t "주문 목록 API가 느리고 일부 주문이 목록에서 빠짐" \
+  --body "$(sed '1,2d' docs/demo/issues/01-list-orders-scan.md)" | grep -o '[0-9]*$')
+gh issue create -R $R -l agent-ok,bug -t "주문 생성 API가 소수 수량을 받아서 합계 금액이 소수로 저장됨" \
+  --body "$(sed '1,2d' docs/demo/issues/03-create-order-quantity.md)"
+gh issue create -R $R -l agent-ok,enhancement -t "배송 목록 API에 pagination 추가" \
+  --body "$(sed '1,2d' docs/demo/issues/02-list-shipments-pagination.md | sed "s/{{LIST_ORDERS_ISSUE}}/$A/")"
+
+# main: CI `verify` must pass and the branch must be up to date before merge
+gh api -X PUT repos/$R/branches/main/protection --input - <<'JSON'
+{"required_status_checks": {"strict": true, "contexts": ["verify"]},
+ "enforce_admins": false, "required_pull_request_reviews": null, "restrictions": null}
+JSON
 ```
 
 ## 2. Reviewer agent
@@ -23,21 +31,12 @@ gh issue create -R dohkimOnAmz/ts-sample-order -l agent-ok,enhancement \
 test and git read commands). Copy it to `~/.kiro/agents/order-reviewer.json` so Kiro Crew can spawn it
 by name.
 
-## 3. Trigger
+## 3. Loop
 
-Primary: Kiro Crew **Issue Radar** app with a crew on this repository. The crew picks `agent-ok`
-issues, posts a claim comment, and records its progress in the crew ledger.
+- Poller: `~/.kiro/crew/crons/ts_sample_order_loop.py` (script cron, no model call). It reads the repo once a
+  minute and wakes the orchestrator session only when an issue, CI result, review comment, or merge state changed.
+- Orchestrator: a Kiro Crew dashboard chat with this repository as its project. Start it with:
 
-Fallback: a Kiro Crew cron job (every 10 minutes) with this message:
+  > `docs/demo/loop.md`를 읽고 그 규칙대로 이 repo의 agent loop를 시작해.
 
-> ts-sample-order(github.com/dohkimOnAmz/ts-sample-order)에서 `agent-ok` 라벨이 있고 `in-progress` 라벨이 없는 열린 이슈를 확인해.
-> 없으면 아무것도 하지 말고 끝내.
-> 있으면 번호가 가장 작은 이슈 하나를 골라: 이슈에 작업 시작 코멘트를 남기고 `in-progress` 라벨을 붙이고,
-> spec(requirements, design, tasks)을 쓴 다음 멈추고 나에게 승인을 기다려. 승인 전에는 코드를 고치지 마.
-> 승인되면 worktree에서 구현하고 `npm run verify`를 통과시켜.
-> 그다음 `order-reviewer` subagent로 리뷰를 받고, 지적은 severity와 상관없이 반영한 뒤 reviewer를 한 번 더 돌려 확인해(최대 2회).
-> 그다음 branch를 push하고 PR을 열어.
-> PR은 monitor_watch(review_ready)로 지켜보고, 리뷰 코멘트가 오면 반영해서 다시 push해.
-> 사람 리뷰 지적 중 다음 작업에도 적용될 규칙은 이 repo 전용 lesson으로 저장해.
-
-For recording, fire it immediately with a manual trigger instead of waiting 10 minutes.
+The rules, events and limits are in `docs/demo/loop.md`.

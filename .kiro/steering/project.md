@@ -26,5 +26,6 @@ inclusion: always
 - 테스트는 `aws-sdk-client-mock`으로 DynamoDB를 mock합니다. 테스트에서 실제 AWS를 호출하지 않습니다.
 - 버그 수정과 새 기능에는 테스트를 함께 추가합니다. 새 테스트를 먼저 쓰고, `npm test`로 실패하는 것을 확인한 뒤 구현합니다.
 - 리뷰 지적은 severity와 상관없이 모두 반영합니다. 반영하지 않을 지적은 이유를 PR 코멘트로 남깁니다.
+- 사람 리뷰 지적이 이번 PR 밖의 코드에도 적용되는 규칙이면, 그 규칙을 알맞은 steering 파일에 한 줄로 추가하고 같은 PR에 넣습니다.
 - 커밋 메시지는 Conventional Commits(`feat:`, `fix:`, `test:`, `chore:`)를 따릅니다. PR 본문에는 한 줄로 `Fixes #<이슈 번호>`를 적습니다.
 - 한 PR에는 이슈 하나만 담습니다.

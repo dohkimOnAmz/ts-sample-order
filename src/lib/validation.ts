@@ -15,7 +15,7 @@ export function parseItems(value: unknown): OrderItem[] | undefined {
     if (typeof raw !== 'object' || raw === null) return undefined;
     const { sku, quantity, unitPrice } = raw as Record<string, unknown>;
     if (typeof sku !== 'string' || !isValidId(sku)) return undefined;
-    if (!Number.isInteger(quantity) || (quantity as number) < 1 || (quantity as number) > 1000) return undefined;
+    if (typeof quantity !== 'number' || quantity < 1 || quantity > 1000) return undefined;
     if (typeof unitPrice !== 'number' || !Number.isFinite(unitPrice) || unitPrice < 0) return undefined;
     items.push({ sku, quantity: quantity as number, unitPrice });
   }
