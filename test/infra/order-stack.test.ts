@@ -20,6 +20,22 @@ describe('OrderStack', () => {
     });
   });
 
+  it('indexes Orders by customer, newest first by createdAt', () => {
+    template.hasResourceProperties('AWS::DynamoDB::Table', {
+      KeySchema: [{ AttributeName: 'orderId', KeyType: 'HASH' }],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: 'byCustomer',
+          KeySchema: [
+            { AttributeName: 'customerId', KeyType: 'HASH' },
+            { AttributeName: 'createdAt', KeyType: 'RANGE' },
+          ],
+          Projection: { ProjectionType: 'ALL' },
+        },
+      ],
+    });
+  });
+
   it('creates one function per route on Node.js 22', () => {
     template.resourcePropertiesCountIs('AWS::Lambda::Function', { Runtime: 'nodejs22.x' }, 4);
     template.resourceCountIs('AWS::ApiGatewayV2::Route', 4);

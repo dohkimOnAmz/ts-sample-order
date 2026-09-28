@@ -20,6 +20,13 @@ export class OrderStack extends Stack {
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: RemovalPolicy.DESTROY, // sample stack; do not copy to production
     });
+    // GET /customers/{customerId}/orders: Query a customer's orders, newest first.
+    orders.addGlobalSecondaryIndex({
+      indexName: 'byCustomer',
+      partitionKey: { name: 'customerId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'createdAt', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
 
     // Shipments: pk customerId, sk createdAt
     const shipments = new dynamodb.Table(this, 'ShipmentsTable', {
