@@ -1,0 +1,34 @@
+{
+  "name": "ts-sample-order",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sample order API (API Gateway HTTP API + Lambda + DynamoDB, CDK) for the Kiro Crew agentic development demo",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/with-tmp.js jest",
+    "synth": "node scripts/with-tmp.js cdk synth --quiet",
+    "verify": "npm run typecheck && npm test && npm run synth"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1141.0",
+    "@aws-sdk/lib-dynamodb": "3.1141.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.163",
+    "@types/jest": "30.0.0",
+    "@types/node": "22.20.4",
+    "aws-cdk": "2.1143.0",
+    "aws-cdk-lib": "2.271.0",
+    "aws-sdk-client-mock": "4.1.0",
+    "constructs": "10.8.1",
+    "esbuild": "0.28.2",
+    "jest": "30.5.2",
+    "ts-jest": "29.4.14",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3"
+  }
+}
