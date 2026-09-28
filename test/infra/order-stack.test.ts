@@ -1,5 +1,5 @@
 import { App } from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
+import { Match, Template } from 'aws-cdk-lib/assertions';
 import { OrderStack } from '../../infra/lib/order-stack';
 
 // Skip esbuild bundling so the test only checks the synthesized template.
@@ -33,6 +33,28 @@ describe('OrderStack', () => {
           Projection: { ProjectionType: 'ALL' },
         },
       ],
+    });
+  });
+
+  it('gives list-orders a generated secret for signing nextToken', () => {
+    template.resourceCountIs('AWS::SecretsManager::Secret', 1);
+    template.hasResourceProperties('AWS::SecretsManager::Secret', {
+      GenerateSecretString: Match.objectLike({ PasswordLength: 64, ExcludePunctuation: true }),
+    });
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Environment: {
+        Variables: Match.objectLike({ PAGINATION_SECRET_ARN: Match.anyValue() }),
+      },
+    });
+    template.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: Match.arrayWith(['secretsmanager:GetSecretValue']),
+            Effect: 'Allow',
+          }),
+        ]),
+      },
     });
   });
 
