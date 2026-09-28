@@ -16,13 +16,15 @@ repository (for example a Kiro Crew Issue Radar crew), must read this file and e
 
 1. Write the new test first and run `npm test` to see it fail, then implement.
 2. Before opening the PR, get a review from the read-only reviewer agent `order-reviewer`
-   (Kiro Crew: `spawn_run(agent="order-reviewer", cwd=<worktree>, task="Review this worktree's change against issue #<n>.")`).
+   (Kiro dashboard chat: `spawn_sub_agents` with `agent_or_mode: "order-reviewer"`, `cwd` = this repo).
    Fix every finding, whatever its severity, and run the reviewer once more. At most 2 review rounds;
-   list the findings and what you changed for each in the PR body.
+   list the findings and what you changed for each in the PR body. An Issue Radar crew cannot spawn
+   `order-reviewer` (app policy): say in the PR body that the review did not run.
 3. When a human review comment states a rule that applies beyond this PR, add that rule as one line to
    the matching `.kiro/steering/*.md` file in the same PR, so the next issue follows it.
-4. Issues labeled `blocked` wait for the issues they are blocked by. Do not start them; the `unblock`
-   workflow adds `agent-ok` when the last blocker closes.
+4. Crews take only issues labeled `agent-ok`. An issue that GitHub shows as "blocked by" another open
+   issue has no `agent-ok` yet; do not start it. The `unblock` workflow adds `agent-ok` when its last
+   blocker closes.
 
 ## Demo host note
 

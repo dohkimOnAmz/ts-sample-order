@@ -1,9 +1,9 @@
 name: unblock
 
-# When an issue closes, give `agent-ok` to every issue it was blocking whose
-# blockers ("blocked by" on GitHub) are now all closed. Kiro Crew crews only pick
-# up `agent-ok` issues, so a dependent issue cannot start before the issue it
-# builds on has landed.
+# When an issue closes, give `agent-ok` to every issue it was blocking ("blocked
+# by" on GitHub) whose blockers are now all closed. Kiro Crew crews only pick up
+# `agent-ok` issues, so a dependent issue cannot start before the issue it builds
+# on has landed.
 on:
   issues:
     types: [closed]
@@ -28,7 +28,6 @@ jobs:
               echo "#$n still has $still_open open blocker(s)"
               continue
             fi
-            gh issue edit "$n" -R "$REPO" --remove-label blocked || true
             gh issue edit "$n" -R "$REPO" --add-label agent-ok
             gh issue comment "$n" -R "$REPO" --body "막고 있던 #$CLOSED 이슈가 닫혀서 \`agent-ok\` 라벨을 붙였습니다."
           done
