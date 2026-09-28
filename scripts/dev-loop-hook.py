@@ -196,8 +196,9 @@ def main() -> None:
             if state["review_rounds"] == 0:
                 state["review_rounds"], state["review_fp"] = 1, fp
                 return _block(
-                    state, "review_requested", "verify가 통과했습니다. PR을 열기 전에 steering대로 `order-reviewer` 리뷰를 "
-                    "`spawn_sub_agents`로 받고(끝날 때까지 기다리는 방식), 지적은 severity와 상관없이 모두 반영한 뒤 턴을 끝내세요.",
+                    state, "review_requested", "verify가 통과했습니다. PR을 열기 전에 읽기 전용 reviewer에게 리뷰를 받으세요: "
+                    f"`spawn_sub_agents(agents=[{{\"agent_or_mode\": \"order-reviewer\", \"prompt\": \"이 repo의 변경을 리뷰해\"}}], cwd=\"{REPO}\")`. "
+                    "지적은 severity와 상관없이 모두 반영한 뒤 턴을 끝내세요.",
                     round=1,
                 )
             if state["review_rounds"] == 1 and fp != state["review_fp"]:
