@@ -70,6 +70,8 @@ export class OrderStack extends Stack {
     });
     paginationSecret.grantRead(listOrders);
     listOrders.addEnvironment('PAGINATION_SECRET_ARN', paginationSecret.secretArn);
+    paginationSecret.grantRead(listShipments);
+    listShipments.addEnvironment('PAGINATION_SECRET_ARN', paginationSecret.secretArn);
 
     // No authorizer: this is a demo stack. Add IAM or JWT auth before exposing real data.
     const api = new HttpApi(this, 'OrderApi');
