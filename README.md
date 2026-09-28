@@ -7,6 +7,7 @@ API Gateway HTTP API + Lambda (Node.js 22, TypeScript) + DynamoDB, deployed with
 |---|---|
 | `POST /orders` | `src/handlers/create-order.ts` |
 | `GET /orders/{orderId}` | `src/handlers/get-order.ts` |
+| `POST /orders/{orderId}/cancel` | `src/handlers/cancel-order.ts` |
 | `GET /customers/{customerId}/orders` | `src/handlers/list-orders.ts` |
 | `GET /customers/{customerId}/shipments` | `src/handlers/list-shipments.ts` |
 
