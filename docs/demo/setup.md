@@ -2,25 +2,24 @@
 
 Remote: `git@github.com:dohkimOnAmz/ts-sample-order.git`
 
-## 1. Labels, issues, dependency and branch protection (GitHub CLI)
+## 1. Label, issues, dependency and branch protection (GitHub CLI)
+
+The only workflow label is `agent-ok` ("an agent may pick this up"). A human adds it to hand an issue to
+the crews; the `unblock` workflow adds it to an issue whose blockers have all closed.
 
 ```bash
 R=dohkimOnAmz/ts-sample-order
-gh label create "role:performance" --color 0E8A16 -R $R --description "성능 담당 crew zippy가 맡습니다 (조회 성능, pagination)"
-gh label create "role:bugfix" --color B60205 -R $R --description "버그 담당 crew bugsy가 맡습니다 (입력 검증 같은 기능 버그)"
-gh label create blocked --color BFD4F2 -R $R --description "다른 이슈를 기다리는 중. 막던 이슈가 닫히면 그 이슈의 role 라벨을 이어받음"
+gh label create agent-ok --color 428BCA -R $R --description "Agent may pick this up"
 
-# A. list-orders, B. create-order quantity, C. list-shipments pagination (blocked by A).
-# No role label yet: assigning a role is the human step at the start of the recording.
+# A. list-orders, B. create-order quantity, C. list-shipments pagination (blocked by A, so no agent-ok yet)
 A=$(gh issue create -R $R -l bug -t "주문 목록 API가 느리고 일부 주문이 목록에서 빠짐" \
   --body "$(sed '1,2d' docs/demo/issues/01-list-orders-scan.md)" | grep -o '[0-9]*$')
-gh issue create -R $R -l bug -t "주문 생성 API가 소수 수량을 받아서 합계 금액이 소수로 저장됨" \
-  --body "$(sed '1,2d' docs/demo/issues/03-create-order-quantity.md)"
-C=$(gh issue create -R $R -l blocked,enhancement -t "배송 목록 API에 pagination 추가" \
+B=$(gh issue create -R $R -l bug -t "주문 생성 API가 소수 수량을 받아서 합계 금액이 소수로 저장됨" \
+  --body "$(sed '1,2d' docs/demo/issues/03-create-order-quantity.md)" | grep -o '[0-9]*$')
+C=$(gh issue create -R $R -l enhancement -t "배송 목록 API에 pagination 추가" \
   --body "$(sed '1,2d' docs/demo/issues/02-list-shipments-pagination.md | sed "s/{{LIST_ORDERS_ISSUE}}/$A/")" | grep -o '[0-9]*$')
 
-# C is blocked by A (GitHub issue dependencies). When A closes, .github/workflows/unblock.yml
-# removes `blocked` from C and copies A's role label to it.
+# C is blocked by A (GitHub issue dependencies). .github/workflows/unblock.yml adds agent-ok to C when A closes.
 gh api -X POST repos/$R/issues/$C/dependencies/blocked_by -F issue_id=$(gh api repos/$R/issues/$A --jq .id)
 
 # main: CI `verify` must pass before merge. Repo auto-merge stays off, so a human merges.
@@ -28,6 +27,10 @@ gh api -X PUT repos/$R/branches/main/protection --input - <<'JSON'
 {"required_status_checks": {"strict": false, "contexts": ["verify"]},
  "enforce_admins": false, "required_pull_request_reviews": null, "restrictions": null}
 JSON
+
+# Recording starts here: the human hands A and B to the crews.
+gh issue edit $A -R $R --add-label agent-ok
+gh issue edit $B -R $R --add-label agent-ok
 ```
 
 ## 2. Reviewer agent
@@ -38,24 +41,21 @@ by name. Add `~/Data/Code` to `subagent_cwd_allowed_roots` in `~/.kiro/crew/conf
 
 ## 3. Issue Radar crews
 
-Issue Radar -> this repository -> New Crew, twice:
+Issue Radar -> this repository -> New Crew, twice. The two crews are identical apart from their names
+(`mochi`, `dubu`); both work `agent-ok` issues and pick them at random.
 
-| Field | zippy | bugsy |
-|---|---|---|
-| Name | `zippy` | `bugsy` |
-| Labels it owns | `role:performance` | `role:bugfix` |
-| Worktree root | `~/Data/Code/crews` | `~/Data/Code/crews` |
-| Agent / Model | `kirocrew` / Auto | `kirocrew` / Auto |
-| Additional prompt | 성능 담당입니다. DynamoDB 접근 패턴과 목록 API pagination을 맡습니다. 작업 규칙은 repo의 AGENTS.md를 따릅니다. | 버그 담당입니다. 입력 검증과 응답 오류 같은 기능 버그를 맡습니다. 작업 규칙은 repo의 AGENTS.md를 따릅니다. |
-| Auto-resolve merge conflicts | on | on |
-| Arm auto-merge when green | off | off |
-| Run unattended | on | on |
-| Open work items | 1 | 1 |
-
-The crews read `AGENTS.md` for the working rules (test first, `order-reviewer`, review rule to steering,
-`blocked` issues, worktree location).
+| Field | Value |
+|---|---|
+| Labels it owns | `agent-ok` |
+| Worktree root | `~/Data/Code` |
+| Agent / Model | `kirocrew` / one model for both crews |
+| Additional prompt | 작업 규칙은 repo의 AGENTS.md를 따릅니다. |
+| Auto-resolve merge conflicts | on |
+| Arm auto-merge when green | off |
+| Run unattended | on |
+| Open work items | 1 |
 
 ## Fallback
 
 `docs/demo/loop.md` describes the same run driven by a cron poller and one orchestrator chat instead of
-Issue Radar. It still uses an `agent-ok` label.
+Issue Radar. It also needs `in-progress` and `needs-human` labels, which this setup does not create.

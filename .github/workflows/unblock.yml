@@ -1,10 +1,9 @@
 name: unblock
 
-# When an issue closes, release every issue it was blocking ("blocked by" on
-# GitHub) whose blockers are now all closed: drop `blocked` and hand it the
-# closed issue's `role:*` label, so the crew that built the base picks up the
-# follow-up. Kiro Crew crews only take issues carrying their own `role:*` label,
-# so a dependent issue cannot start before the issue it builds on has landed.
+# When an issue closes, give `agent-ok` to every issue it was blocking ("blocked
+# by" on GitHub) whose blockers are now all closed. Kiro Crew crews only pick up
+# `agent-ok` issues, so a dependent issue cannot start before the issue it builds
+# on has landed.
 on:
   issues:
     types: [closed]
@@ -23,18 +22,12 @@ jobs:
           CLOSED: ${{ github.event.issue.number }}
         run: |
           set -euo pipefail
-          roles=$(gh api "repos/$REPO/issues/$CLOSED" --jq '[.labels[].name | select(startswith("role:"))] | join(",")')
           for n in $(gh api "repos/$REPO/issues/$CLOSED/dependencies/blocking" --jq '.[] | select(.state == "open") | .number'); do
             still_open=$(gh api "repos/$REPO/issues/$n/dependencies/blocked_by" --jq '[.[] | select(.state == "open")] | length')
             if [ "$still_open" != "0" ]; then
               echo "#$n still has $still_open open blocker(s)"
               continue
             fi
-            gh issue edit "$n" -R "$REPO" --remove-label blocked || true
-            if [ -n "$roles" ]; then
-              gh issue edit "$n" -R "$REPO" --add-label "$roles"
-              gh issue comment "$n" -R "$REPO" --body "막고 있던 #$CLOSED 이슈가 닫혀서, 같은 담당(\`$roles\`)에게 넘겼습니다."
-            else
-              gh issue comment "$n" -R "$REPO" --body "막고 있던 #$CLOSED 이슈가 닫혔습니다. 담당 라벨(\`role:*\`)을 붙여 주세요."
-            fi
+            gh issue edit "$n" -R "$REPO" --add-label agent-ok
+            gh issue comment "$n" -R "$REPO" --body "막고 있던 #$CLOSED 이슈가 닫혀서 \`agent-ok\` 라벨을 붙였습니다."
           done

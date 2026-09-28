@@ -1,5 +1,5 @@
 <!-- title: 주문 생성 API가 소수 수량을 받아서 합계 금액이 소수로 저장됨 -->
-<!-- labels: bug (role label is assigned by a human) -->
+<!-- labels: bug (a human adds agent-ok) -->
 
 ## 현상
 
