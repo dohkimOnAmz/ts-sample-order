@@ -21,34 +21,50 @@ function conditionFailed(item?: Record<string, unknown>): ConditionalCheckFailed
 }
 
 describe('POST /orders/{orderId}/cancel', () => {
-  it('cancels a PENDING order', async () => {
-    ddbMock.on(UpdateCommand).resolves({
-      Attributes: { orderId: 'ord-1', customerId: 'cust-1', status: 'CANCELLED' },
-    });
+  it('cancels a PENDING order and stores cancelledAt', async () => {
+    ddbMock.on(UpdateCommand).callsFake((input) => ({
+      Attributes: {
+        orderId: 'ord-1',
+        customerId: 'cust-1',
+        status: 'CANCELLED',
+        cancelledAt: input.ExpressionAttributeValues[':cancelledAt'],
+      },
+    }));
 
     const res = await handler(apiEvent({ pathParameters: { orderId: 'ord-1' } }));
 
     expect(res.statusCode).toBe(200);
-    expect(parseBody<Order>(res).status).toBe('CANCELLED');
+    const order = parseBody<Order>(res);
+    expect(order.status).toBe('CANCELLED');
+    expect(order.cancelledAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     const update = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
     expect(update.TableName).toBe('orders-test');
     expect(update.Key).toEqual({ orderId: 'ord-1' });
+    expect(update.UpdateExpression).toContain('cancelledAt');
     expect(update.ExpressionAttributeValues).toMatchObject({
       ':cancelled': 'CANCELLED',
       ':pending': 'PENDING',
       ':paid': 'PAID',
     });
+    expect(update.ExpressionAttributeValues?.[':cancelledAt']).toBe(order.cancelledAt);
   });
 
   it('cancels a PAID order', async () => {
     ddbMock.on(UpdateCommand).resolves({
-      Attributes: { orderId: 'ord-2', customerId: 'cust-1', status: 'CANCELLED' },
+      Attributes: {
+        orderId: 'ord-2',
+        customerId: 'cust-1',
+        status: 'CANCELLED',
+        cancelledAt: '2026-09-28T11:00:00.000Z',
+      },
     });
 
     const res = await handler(apiEvent({ pathParameters: { orderId: 'ord-2' } }));
 
     expect(res.statusCode).toBe(200);
-    expect(parseBody<Order>(res).status).toBe('CANCELLED');
+    const order = parseBody<Order>(res);
+    expect(order.status).toBe('CANCELLED');
+    expect(order.cancelledAt).toBe('2026-09-28T11:00:00.000Z');
   });
 
   it('returns 409 when the order is already SHIPPED', async () => {

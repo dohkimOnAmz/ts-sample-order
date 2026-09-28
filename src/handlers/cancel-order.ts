@@ -21,14 +21,17 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<HttpResult
       new UpdateCommand({
         TableName: tableName('ORDERS_TABLE'),
         Key: { orderId },
-        UpdateExpression: 'SET #status = :cancelled',
+        UpdateExpression: 'SET #status = :cancelled, cancelledAt = :cancelledAt',
         ConditionExpression: 'attribute_exists(orderId) AND #status IN (:pending, :paid)',
         ExpressionAttributeNames: { '#status': 'status' },
         ExpressionAttributeValues: {
           ':cancelled': 'CANCELLED',
+          ':cancelledAt': new Date().toISOString(),
           ':pending': 'PENDING',
           ':paid': 'PAID',
         },
+        // ALL_NEW returns the stored item, so cancelledAt in the response is the
+        // value that was written rather than a second clock reading.
         ReturnValues: 'ALL_NEW',
         // Returns the current item with the failure, which is how a rejected
         // cancel is told apart: item present = wrong status, absent = no order.

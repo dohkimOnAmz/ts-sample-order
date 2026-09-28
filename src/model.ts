@@ -13,6 +13,7 @@ export interface Order {
   items: OrderItem[];
   totalAmount: number;
   createdAt: string; // ISO-8601
+  cancelledAt?: string; // ISO-8601, present once the order is cancelled
 }
 
 export type ShipmentStatus = 'READY' | 'IN_TRANSIT' | 'DELIVERED';
