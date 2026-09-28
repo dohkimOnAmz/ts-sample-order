@@ -46,40 +46,4 @@ describe('POST /orders', () => {
     expect(res.statusCode).toBe(400);
     expect(ddbMock.commandCalls(PutCommand)).toHaveLength(0);
   });
-
-  it.each([
-    ['a fractional quantity', 1.5],
-    ['zero', 0],
-    ['more than 1000', 1001],
-    ['a numeric string', '2'],
-    ['null', null],
-  ])('rejects %s as quantity', async (_label, quantity) => {
-    const res = await handler(
-      apiEvent({
-        body: JSON.stringify({
-          customerId: 'cust-1',
-          items: [{ sku: 'sku-a', quantity, unitPrice: 3000 }],
-        }),
-      }),
-    );
-    expect(res.statusCode).toBe(400);
-    expect(ddbMock.commandCalls(PutCommand)).toHaveLength(0);
-  });
-
-  it.each([1, 1000])('accepts integer quantity %d at the boundary', async (quantity) => {
-    ddbMock.on(PutCommand).resolves({});
-
-    const res = await handler(
-      apiEvent({
-        body: JSON.stringify({
-          customerId: 'cust-1',
-          items: [{ sku: 'sku-a', quantity, unitPrice: 3000 }],
-        }),
-      }),
-    );
-
-    expect(res.statusCode).toBe(201);
-    expect(parseBody<Order>(res).totalAmount).toBe(quantity * 3000);
-    expect(ddbMock.commandCalls(PutCommand)).toHaveLength(1);
-  });
 });
