@@ -42,7 +42,7 @@ by name. Add `~/Data/Code` to `subagent_cwd_allowed_roots` in `~/.kiro/crew/conf
 ## 3. Issue Radar crews
 
 Issue Radar -> this repository -> New Crew, twice. The two crews are identical apart from their names
-(`mochi`, `dubu`); both work `agent-ok` issues and pick them at random.
+(`mario`, `luigi`); both work `agent-ok` issues and pick them at random, so no human assigns an issue to a specific crew.
 
 | Field | Value |
 |---|---|
