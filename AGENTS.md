@@ -21,13 +21,14 @@ repository (for example a Kiro Crew Issue Radar crew), must read this file and e
    list the findings and what you changed for each in the PR body.
 3. When a human review comment states a rule that applies beyond this PR, add that rule as one line to
    the matching `.kiro/steering/*.md` file in the same PR, so the next issue follows it.
-4. Issues labeled `blocked` wait for the issues they are blocked by. Do not start them; the `unblock`
-   workflow adds `agent-ok` when the last blocker closes.
+4. Work is assigned with `role:*` labels (`role:performance`, `role:bugfix`); a crew only takes issues
+   carrying its own role label. Issues labeled `blocked` wait for the issues they are blocked by. Do not
+   start them; the `unblock` workflow hands them the blocker's `role:*` label when the last blocker closes.
 
 ## Demo host note
 
-On the demo host, create worktrees under `~/Data/Code/` (for example
-`~/Data/Code/ts-sample-order-<crew>-<issue>`). Kiro Crew only lets a subagent such as `order-reviewer`
+On the demo host, create worktrees under `~/Data/Code/crews/` (for example
+`~/Data/Code/crews/<crew>-<issue>`). Kiro Crew only lets a subagent such as `order-reviewer`
 run inside its allowed roots, and `~/Data/Code` is the one configured there.
 
 Details: `.kiro/steering/project.md`, `.kiro/steering/dynamodb.md`.

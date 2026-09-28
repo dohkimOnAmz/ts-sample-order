@@ -1,5 +1,5 @@
 <!-- title: 주문 목록 API가 느리고 일부 주문이 목록에서 빠짐 -->
-<!-- labels: agent-ok, bug -->
+<!-- labels: bug (role label is assigned by a human) -->
 
 ## 현상
 
