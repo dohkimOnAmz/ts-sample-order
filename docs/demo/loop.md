@@ -21,7 +21,7 @@ poller가 보내는 이벤트: `NEW_ISSUES`, `CI_FAILURE`, `REVIEW_COMMENT`, `BE
 - repo: `dohkimOnAmz/ts-sample-order`. `gh`에는 항상 `-R dohkimOnAmz/ts-sample-order`를 붙입니다.
 - agent가 GitHub에 쓰는 모든 코멘트와 PR 본문은 마지막 줄을 `<!-- kiro-crew -->`로 끝냅니다. poller는 이 표시로 사람 코멘트와 agent 코멘트를 구분합니다.
 - main에 push하지 않고, merge하지 않고, force push하지 않습니다.
-- 이슈별 단계, worktree, 구현 subagent의 conversation id, reviewer 횟수, CI 수정 횟수는 `session_ledger_record`로 기록합니다. 이 세션의 기억보다 ledger를 먼저 믿습니다.
+- 이슈별 단계, 의존 관계, worktree, 구현 subagent의 conversation id, reviewer 횟수, CI 수정 횟수, 작업 시작 시각은 ledger 파일 `~/.kiro/crew/crons/state/dohkimOnAmz__ts-sample-order.ledger.json`에 기록합니다. 상태가 바뀔 때마다 갱신하고, 이 세션의 기억보다 이 파일을 먼저 믿습니다.
 - poller 메시지 하나에 이벤트가 여러 개면 모두 처리합니다. 할 일이 없으면 한 줄로 끝냅니다.
 
 ## 0. 시작 (한 번)
@@ -86,7 +86,7 @@ PR 본문: 무엇을 바꿨는지 3줄 이내, 테스트, loop 기록(reviewer �
 
 ## 4. ALL_DONE: 타임라인
 
-`~/.kiro/crew/crons/state/dohkimOnAmz__ts-sample-order.events.jsonl`, ledger, `gh pr list --state merged --json number,title,createdAt,mergedAt`을 합쳐서 mcwidget 타임라인 하나를 만듭니다.
+`~/.kiro/crew/crons/state/dohkimOnAmz__ts-sample-order.events.jsonl`, ledger 파일, `gh pr list --state merged --json number,title,createdAt,mergedAt`을 합쳐서 mcwidget 타임라인 하나를 만듭니다.
 
 - 이슈마다: 시작, PR 생성, reviewer 지적과 수정, CI 실패와 수정, 사람 리뷰 반영, main 반영, merge 시각
 - poller: 확인한 횟수와 이 세션을 깨운 횟수
@@ -94,4 +94,4 @@ PR 본문: 무엇을 바꿨는지 3줄 이내, 테스트, loop 기록(reviewer �
 
 ## 다시 돌릴 때
 
-poller 상태 파일 두 개(`~/.kiro/crew/crons/state/dohkimOnAmz__ts-sample-order.*`)를 지우고, 새 이슈에 `agent-ok`를 붙인 뒤 0번부터 시작합니다.
+상태 파일 세 개(`~/.kiro/crew/crons/state/dohkimOnAmz__ts-sample-order.*`: poller 상태, 이벤트 로그, ledger)를 지우고, 새 이슈에 `agent-ok`를 붙인 뒤 0번부터 시작합니다.
