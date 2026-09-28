@@ -58,6 +58,14 @@ describe('OrderStack', () => {
     });
   });
 
+  it('gives both list functions the signing secret ARN', () => {
+    template.resourcePropertiesCountIs(
+      'AWS::Lambda::Function',
+      { Environment: { Variables: Match.objectLike({ PAGINATION_SECRET_ARN: Match.anyValue() }) } },
+      2,
+    );
+  });
+
   it('creates one function per route on Node.js 22', () => {
     template.resourcePropertiesCountIs('AWS::Lambda::Function', { Runtime: 'nodejs22.x' }, 4);
     template.resourceCountIs('AWS::ApiGatewayV2::Route', 4);
