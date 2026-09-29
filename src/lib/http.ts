@@ -18,6 +18,10 @@ export function notFound(message: string): HttpResult {
   return json(404, { message });
 }
 
+export function conflict(message: string): HttpResult {
+  return json(409, { message });
+}
+
 export function serverError(err: unknown): HttpResult {
   // Log the detail for operators; never return it to the caller.
   console.error(err);
