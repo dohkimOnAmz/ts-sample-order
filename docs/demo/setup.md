@@ -22,10 +22,15 @@ C=$(gh issue create -R $R -l enhancement -t "배송 목록 API에 pagination 추
 # C is blocked by A (GitHub issue dependencies). .github/workflows/unblock.yml adds agent-ok to C when A closes.
 gh api -X POST repos/$R/issues/$C/dependencies/blocked_by -F issue_id=$(gh api repos/$R/issues/$A --jq .id)
 
-# main: CI `verify` must pass before merge. Repo auto-merge stays off, so a human merges.
+# main: CI `verify` and 1 approving review before merge. Repo auto-merge stays off, so a human merges.
+# The approval keeps a PR "review required" after CI goes green, so monitor_watch keeps waiting for
+# a review comment instead of ending at review_ready. Agents push as the owner's account, which cannot
+# approve its own PR: the owner merges with "bypass rules" (enforce_admins stays false).
 gh api -X PUT repos/$R/branches/main/protection --input - <<'JSON'
 {"required_status_checks": {"strict": false, "contexts": ["verify"]},
- "enforce_admins": false, "required_pull_request_reviews": null, "restrictions": null}
+ "enforce_admins": false,
+ "required_pull_request_reviews": {"required_approving_review_count": 1},
+ "restrictions": null}
 JSON
 
 # Recording starts here: the human hands A and B to the crews.
@@ -54,6 +59,19 @@ Issue Radar -> this repository -> New Crew, twice. The two crews are identical a
 | Arm auto-merge when green | off |
 | Run unattended | on |
 | Open work items | 1 |
+
+## 4. Development loop (`order-dev` agent)
+
+`.kiro/agents/order-dev.json` is the `kirocrew` agent plus hooks that run `scripts/dev-gate.py`:
+
+- `preToolUse` on `execute_bash`: before `git commit`, `git push` or `gh pr create`, refuse on main,
+  run `npm run verify` (5 failures in a row: stop and hand over), and require an `order-reviewer`
+  APPROVE (max 2 rounds) before the PR. A refusal exits 2 and its message goes back to the model.
+- `postToolUse` on `spawn_sub_agents`: records the reviewer's verdict for the reviewed code.
+
+It only runs in chats that use this agent. Open a new dashboard chat with project folder
+`~/Data/Code/ts-sample-order` and agent `order-dev`. Gate state and its event log are in
+`.tmp/dev-loop/` (git-ignored); delete that folder to reset. No global Kiro Crew hook is needed.
 
 ## Fallback
 
