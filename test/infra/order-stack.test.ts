@@ -21,7 +21,26 @@ describe('OrderStack', () => {
   });
 
   it('creates one function per route on Node.js 22', () => {
-    template.resourcePropertiesCountIs('AWS::Lambda::Function', { Runtime: 'nodejs22.x' }, 4);
-    template.resourceCountIs('AWS::ApiGatewayV2::Route', 4);
+    template.resourcePropertiesCountIs('AWS::Lambda::Function', { Runtime: 'nodejs22.x' }, 5);
+    template.resourceCountIs('AWS::ApiGatewayV2::Route', 5);
+  });
+
+  it('routes PUT /orders/{orderId}/address', () => {
+    template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+      RouteKey: 'PUT /orders/{orderId}/address',
+    });
+  });
+
+  it('grants the address function UpdateItem only', () => {
+    const [roleId] = Object.entries(template.findResources('AWS::IAM::Role')).find(([id]) =>
+      id.startsWith('UpdateOrderAddressFn'),
+    )!;
+    const policies = Object.values(template.findResources('AWS::IAM::Policy')).filter((p) =>
+      (p.Properties.Roles as { Ref: string }[]).some((r) => r.Ref === roleId),
+    );
+    const actions = policies.flatMap((p) =>
+      (p.Properties.PolicyDocument.Statement as { Action: string | string[] }[]).flatMap((s) => s.Action),
+    );
+    expect(actions).toEqual(['dynamodb:UpdateItem']);
   });
 });

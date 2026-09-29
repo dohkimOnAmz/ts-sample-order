@@ -48,8 +48,10 @@ export class OrderStack extends Stack {
     const getOrder = fn('GetOrderFn', 'get-order.ts');
     const listOrders = fn('ListOrdersFn', 'list-orders.ts');
     const listShipments = fn('ListShipmentsFn', 'list-shipments.ts');
+    const updateOrderAddress = fn('UpdateOrderAddressFn', 'update-order-address.ts');
 
     orders.grantWriteData(createOrder);
+    orders.grant(updateOrderAddress, 'dynamodb:UpdateItem');
     orders.grantReadData(getOrder);
     orders.grantReadData(listOrders);
     shipments.grantReadData(listShipments);
@@ -64,6 +66,7 @@ export class OrderStack extends Stack {
       });
     route('/orders', HttpMethod.POST, createOrder);
     route('/orders/{orderId}', HttpMethod.GET, getOrder);
+    route('/orders/{orderId}/address', HttpMethod.PUT, updateOrderAddress);
     route('/customers/{customerId}/orders', HttpMethod.GET, listOrders);
     route('/customers/{customerId}/shipments', HttpMethod.GET, listShipments);
 
