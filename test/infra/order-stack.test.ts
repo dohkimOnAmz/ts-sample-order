@@ -21,13 +21,7 @@ describe('OrderStack', () => {
   });
 
   it('creates one function per route on Node.js 22', () => {
-    template.resourcePropertiesCountIs('AWS::Lambda::Function', { Runtime: 'nodejs22.x' }, 5);
-    template.resourceCountIs('AWS::ApiGatewayV2::Route', 5);
-  });
-
-  it('routes POST /orders/{orderId}/cancel', () => {
-    template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
-      RouteKey: 'POST /orders/{orderId}/cancel',
-    });
+    template.resourcePropertiesCountIs('AWS::Lambda::Function', { Runtime: 'nodejs22.x' }, 4);
+    template.resourceCountIs('AWS::ApiGatewayV2::Route', 4);
   });
 });

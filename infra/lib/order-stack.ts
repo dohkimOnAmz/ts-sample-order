@@ -48,13 +48,11 @@ export class OrderStack extends Stack {
     const getOrder = fn('GetOrderFn', 'get-order.ts');
     const listOrders = fn('ListOrdersFn', 'list-orders.ts');
     const listShipments = fn('ListShipmentsFn', 'list-shipments.ts');
-    const cancelOrder = fn('CancelOrderFn', 'cancel-order.ts');
 
     orders.grantWriteData(createOrder);
     orders.grantReadData(getOrder);
     orders.grantReadData(listOrders);
     shipments.grantReadData(listShipments);
-    orders.grantWriteData(cancelOrder);
 
     // No authorizer: this is a demo stack. Add IAM or JWT auth before exposing real data.
     const api = new HttpApi(this, 'OrderApi');
@@ -66,7 +64,6 @@ export class OrderStack extends Stack {
       });
     route('/orders', HttpMethod.POST, createOrder);
     route('/orders/{orderId}', HttpMethod.GET, getOrder);
-    route('/orders/{orderId}/cancel', HttpMethod.POST, cancelOrder);
     route('/customers/{customerId}/orders', HttpMethod.GET, listOrders);
     route('/customers/{customerId}/shipments', HttpMethod.GET, listShipments);
 
