@@ -51,7 +51,7 @@ export class OrderStack extends Stack {
     const updateOrderAddress = fn('UpdateOrderAddressFn', 'update-order-address.ts');
 
     orders.grantWriteData(createOrder);
-    orders.grantWriteData(updateOrderAddress);
+    orders.grant(updateOrderAddress, 'dynamodb:UpdateItem');
     orders.grantReadData(getOrder);
     orders.grantReadData(listOrders);
     shipments.grantReadData(listShipments);
