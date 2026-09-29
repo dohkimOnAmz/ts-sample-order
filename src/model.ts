@@ -6,12 +6,20 @@ export interface OrderItem {
   unitPrice: number;
 }
 
+export interface ShippingAddress {
+  recipient: string;
+  line1: string;
+  city: string;
+  postalCode: string;
+}
+
 export interface Order {
   orderId: string;
   customerId: string;
   status: OrderStatus;
   items: OrderItem[];
   totalAmount: number;
+  shippingAddress?: ShippingAddress;
   createdAt: string; // ISO-8601
 }
 
