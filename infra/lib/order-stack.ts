@@ -64,7 +64,7 @@ export class OrderStack extends Stack {
     orders.grant(updateOrderStatus, 'dynamodb:UpdateItem', 'dynamodb:GetItem');
     orders.grantReadData(getOrder);
     orders.grantReadData(listOrders);
-    // HMAC key that signs list-orders nextToken values (src/lib/pagination.ts).
+    // HMAC key that signs list API nextToken values (src/lib/pagination.ts).
     const paginationSecret = new secretsmanager.Secret(this, 'PaginationSecret', {
       description: 'HMAC key for signing list API nextToken values',
       generateSecretString: { passwordLength: 64, excludePunctuation: true },
@@ -72,6 +72,8 @@ export class OrderStack extends Stack {
     });
     listOrders.addEnvironment('PAGINATION_SECRET_ARN', paginationSecret.secretArn);
     paginationSecret.grantRead(listOrders);
+    listShipments.addEnvironment('PAGINATION_SECRET_ARN', paginationSecret.secretArn);
+    paginationSecret.grantRead(listShipments);
     shipments.grantReadData(listShipments);
 
     // No authorizer: this is a demo stack. Add IAM or JWT auth before exposing real data.
