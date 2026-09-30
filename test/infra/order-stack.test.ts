@@ -43,20 +43,25 @@ describe('OrderStack', () => {
     });
   });
 
-  it('gives only the list-orders function the secret ARN and read access', () => {
+  it('gives only the list functions (orders, shipments) the secret ARN and read access', () => {
     const withArn = template.findResources('AWS::Lambda::Function', {
       Properties: {
         Environment: { Variables: Match.objectLike({ PAGINATION_SECRET_ARN: Match.anyValue() }) },
       },
     });
-    expect(Object.keys(withArn)).toHaveLength(1);
-    expect(Object.keys(withArn)[0]).toMatch(/^ListOrdersFn/);
+    expect(Object.keys(withArn).sort()).toEqual([
+      expect.stringMatching(/^ListOrdersFn/),
+      expect.stringMatching(/^ListShipmentsFn/),
+    ]);
 
     const policies = template.findResources('AWS::IAM::Policy');
     const readers = Object.entries(policies).filter(([, p]) =>
       JSON.stringify(p).includes('secretsmanager:GetSecretValue'),
     );
-    expect(readers.map(([id]) => id)).toEqual([expect.stringMatching(/^ListOrdersFn/)]);
+    expect(readers.map(([id]) => id).sort()).toEqual([
+      expect.stringMatching(/^ListOrdersFn/),
+      expect.stringMatching(/^ListShipmentsFn/),
+    ]);
   });
 
   it('creates one function per route on Node.js 22', () => {
