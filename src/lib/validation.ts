@@ -1,9 +1,15 @@
-import type { OrderItem, ShippingAddress } from '../model';
+import type { OrderItem, OrderStatus, ShippingAddress } from '../model';
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 export function isValidId(value: string | undefined): value is string {
   return typeof value === 'string' && ID_PATTERN.test(value);
+}
+
+const ORDER_STATUSES: readonly string[] = ['PENDING', 'PAID', 'SHIPPED', 'CANCELLED'];
+
+export function isOrderStatus(value: unknown): value is OrderStatus {
+  return typeof value === 'string' && ORDER_STATUSES.includes(value);
 }
 
 export function parseItems(value: unknown): OrderItem[] | undefined {
