@@ -37,7 +37,9 @@ describe('PUT /orders/{orderId}/status', () => {
     const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
     expect(input.TableName).toBe('orders-test');
     expect(input.Key).toEqual({ orderId: 'ord-1' });
-    expect(input.ConditionExpression).toContain('attribute_exists(orderId)');
+    expect(input.UpdateExpression).toBe('SET #status = :to');
+    expect(input.ConditionExpression).toBe('attribute_exists(orderId) AND #status = :from');
+    expect(input.ExpressionAttributeNames).toEqual({ '#status': 'status' });
     expect(input.ExpressionAttributeValues).toMatchObject({ ':to': to, ':from': from });
     expect(input.ReturnValuesOnConditionCheckFailure).toBe('ALL_OLD');
   });
