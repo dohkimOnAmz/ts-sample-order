@@ -3,6 +3,7 @@ import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, tableName } from '../lib/db';
 import { badRequest, json, serverError, type HttpResult } from '../lib/http';
 import { decodeNextToken, encodeNextToken, parseLimit, type PageKey } from '../lib/pagination';
+import { getPaginationSecret } from '../lib/secret';
 import { isValidId } from '../lib/validation';
 import type { Order } from '../model';
 
@@ -23,18 +24,22 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<HttpResult
     return badRequest(limitResult.error);
   }
 
-  let startKey: PageKey | undefined;
   const rawToken = event.queryStringParameters?.nextToken;
-  if (rawToken !== undefined) {
-    startKey = decodeNextToken(rawToken);
-    // The key must be a GSI key for this customer; anything else is rejected
-    // so a token cannot be used to read another customer's orders.
-    if (!startKey || !isStartKeyFor(startKey, customerId)) {
-      return badRequest('nextToken is invalid');
-    }
-  }
 
   try {
+    const secret = await getPaginationSecret();
+
+    let startKey: PageKey | undefined;
+    if (rawToken !== undefined) {
+      startKey = decodeNextToken(rawToken, secret);
+      // The token must carry a valid signature and a GSI key for this customer;
+      // anything else is rejected so a token cannot be forged or reused to read
+      // another customer's orders.
+      if (!startKey || !isStartKeyFor(startKey, customerId)) {
+        return badRequest('nextToken is invalid');
+      }
+    }
+
     const result = await ddb.send(
       new QueryCommand({
         TableName: tableName('ORDERS_TABLE'),
@@ -48,7 +53,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<HttpResult
     );
     const orders = (result.Items ?? []) as Order[];
     const nextToken = result.LastEvaluatedKey
-      ? encodeNextToken(result.LastEvaluatedKey as PageKey)
+      ? encodeNextToken(result.LastEvaluatedKey as PageKey, secret)
       : undefined;
     return json(200, nextToken ? { orders, nextToken } : { orders });
   } catch (err) {

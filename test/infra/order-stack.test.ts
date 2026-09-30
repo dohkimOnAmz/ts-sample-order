@@ -1,5 +1,5 @@
 import { App } from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
+import { Match, Template } from 'aws-cdk-lib/assertions';
 import { OrderStack } from '../../infra/lib/order-stack';
 
 // Skip esbuild bundling so the test only checks the synthesized template.
@@ -34,6 +34,29 @@ describe('OrderStack', () => {
         },
       ],
     });
+  });
+
+  it('creates a generated PaginationSecret for signing nextToken', () => {
+    template.resourceCountIs('AWS::SecretsManager::Secret', 1);
+    template.hasResourceProperties('AWS::SecretsManager::Secret', {
+      GenerateSecretString: Match.objectLike({ PasswordLength: 64, ExcludePunctuation: true }),
+    });
+  });
+
+  it('gives only the list-orders function the secret ARN and read access', () => {
+    const withArn = template.findResources('AWS::Lambda::Function', {
+      Properties: {
+        Environment: { Variables: Match.objectLike({ PAGINATION_SECRET_ARN: Match.anyValue() }) },
+      },
+    });
+    expect(Object.keys(withArn)).toHaveLength(1);
+    expect(Object.keys(withArn)[0]).toMatch(/^ListOrdersFn/);
+
+    const policies = template.findResources('AWS::IAM::Policy');
+    const readers = Object.entries(policies).filter(([, p]) =>
+      JSON.stringify(p).includes('secretsmanager:GetSecretValue'),
+    );
+    expect(readers.map(([id]) => id)).toEqual([expect.stringMatching(/^ListOrdersFn/)]);
   });
 
   it('creates one function per route on Node.js 22', () => {
