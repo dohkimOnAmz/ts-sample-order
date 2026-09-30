@@ -47,10 +47,10 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<HttpResult
       new UpdateCommand({
         TableName: tableName('ORDERS_TABLE'),
         Key: { orderId },
-        UpdateExpression: 'SET #status = :to',
+        UpdateExpression: 'SET #status = :to, statusUpdatedAt = :now',
         ConditionExpression: 'attribute_exists(orderId) AND #status = :from',
         ExpressionAttributeNames: { '#status': 'status' },
-        ExpressionAttributeValues: { ':to': status, ':from': from },
+        ExpressionAttributeValues: { ':to': status, ':from': from, ':now': new Date().toISOString() },
         ReturnValues: 'ALL_NEW',
         // On a failed condition, return the existing item so 404 and 409 can be told apart.
         ReturnValuesOnConditionCheckFailure: 'ALL_OLD',

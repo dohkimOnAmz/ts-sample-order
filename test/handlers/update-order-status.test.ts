@@ -37,11 +37,24 @@ describe('PUT /orders/{orderId}/status', () => {
     const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
     expect(input.TableName).toBe('orders-test');
     expect(input.Key).toEqual({ orderId: 'ord-1' });
-    expect(input.UpdateExpression).toBe('SET #status = :to');
+    expect(input.UpdateExpression).toBe('SET #status = :to, statusUpdatedAt = :now');
     expect(input.ConditionExpression).toBe('attribute_exists(orderId) AND #status = :from');
     expect(input.ExpressionAttributeNames).toEqual({ '#status': 'status' });
     expect(input.ExpressionAttributeValues).toMatchObject({ ':to': to, ':from': from });
     expect(input.ReturnValuesOnConditionCheckFailure).toBe('ALL_OLD');
+  });
+
+  it('stores statusUpdatedAt as an ISO-8601 time and returns the updated item', async () => {
+    ddbMock.on(UpdateCommand).callsFake((input) => ({
+      Attributes: { orderId: 'ord-1', status: 'PAID', statusUpdatedAt: input.ExpressionAttributeValues[':now'] },
+    }));
+
+    const res = await put({ status: 'PAID' });
+
+    expect(res.statusCode).toBe(200);
+    const now = ddbMock.commandCalls(UpdateCommand)[0].args[0].input.ExpressionAttributeValues?.[':now'];
+    expect(now).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    expect(parseBody<{ statusUpdatedAt: string }>(res).statusUpdatedAt).toBe(now);
   });
 
   it.each(['PAID', 'SHIPPED'])('returns 409 when the current status does not allow %s', async (to) => {

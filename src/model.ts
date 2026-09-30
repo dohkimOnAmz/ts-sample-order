@@ -21,6 +21,7 @@ export interface Order {
   totalAmount: number;
   shippingAddress?: ShippingAddress;
   createdAt: string; // ISO-8601
+  statusUpdatedAt?: string; // ISO-8601, set when the status is changed
 }
 
 export type ShipmentStatus = 'READY' | 'IN_TRANSIT' | 'DELIVERED';
