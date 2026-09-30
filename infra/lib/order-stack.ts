@@ -2,6 +2,7 @@ import * as path from 'node:path';
 import { CfnOutput, Duration, RemovalPolicy, Stack, type StackProps } from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { HttpApi, HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
@@ -19,6 +20,13 @@ export class OrderStack extends Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: RemovalPolicy.DESTROY, // sample stack; do not copy to production
+    });
+    // GET /customers/{customerId}/orders: Query by customer, newest first.
+    orders.addGlobalSecondaryIndex({
+      indexName: 'byCustomer',
+      partitionKey: { name: 'customerId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'createdAt', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
     });
 
     // Shipments: pk customerId, sk createdAt
@@ -56,6 +64,14 @@ export class OrderStack extends Stack {
     orders.grant(updateOrderStatus, 'dynamodb:UpdateItem', 'dynamodb:GetItem');
     orders.grantReadData(getOrder);
     orders.grantReadData(listOrders);
+    // HMAC key that signs list-orders nextToken values (src/lib/pagination.ts).
+    const paginationSecret = new secretsmanager.Secret(this, 'PaginationSecret', {
+      description: 'HMAC key for signing list API nextToken values',
+      generateSecretString: { passwordLength: 64, excludePunctuation: true },
+      removalPolicy: RemovalPolicy.DESTROY, // sample stack; do not copy to production
+    });
+    listOrders.addEnvironment('PAGINATION_SECRET_ARN', paginationSecret.secretArn);
+    paginationSecret.grantRead(listOrders);
     shipments.grantReadData(listShipments);
 
     // No authorizer: this is a demo stack. Add IAM or JWT auth before exposing real data.
