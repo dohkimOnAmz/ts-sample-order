@@ -21,8 +21,8 @@ describe('OrderStack', () => {
   });
 
   it('creates one function per route on Node.js 22', () => {
-    template.resourcePropertiesCountIs('AWS::Lambda::Function', { Runtime: 'nodejs22.x' }, 5);
-    template.resourceCountIs('AWS::ApiGatewayV2::Route', 5);
+    template.resourcePropertiesCountIs('AWS::Lambda::Function', { Runtime: 'nodejs22.x' }, 6);
+    template.resourceCountIs('AWS::ApiGatewayV2::Route', 6);
   });
 
   it('routes PUT /orders/{orderId}/address', () => {
@@ -31,9 +31,19 @@ describe('OrderStack', () => {
     });
   });
 
-  it('grants the address function UpdateItem only', () => {
+  it('routes PUT /orders/{orderId}/status', () => {
+    template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+      RouteKey: 'PUT /orders/{orderId}/status',
+    });
+  });
+
+  it.each([
+    ['UpdateOrderAddressFn', ['dynamodb:UpdateItem']],
+    // The status handler also reads: a dead-end target status must answer 404 for a missing order.
+    ['UpdateOrderStatusFn', ['dynamodb:UpdateItem', 'dynamodb:GetItem']],
+  ])('grants %s exactly %p', (fnId, expected) => {
     const [roleId] = Object.entries(template.findResources('AWS::IAM::Role')).find(([id]) =>
-      id.startsWith('UpdateOrderAddressFn'),
+      id.startsWith(fnId as string),
     )!;
     const policies = Object.values(template.findResources('AWS::IAM::Policy')).filter((p) =>
       (p.Properties.Roles as { Ref: string }[]).some((r) => r.Ref === roleId),
@@ -41,6 +51,6 @@ describe('OrderStack', () => {
     const actions = policies.flatMap((p) =>
       (p.Properties.PolicyDocument.Statement as { Action: string | string[] }[]).flatMap((s) => s.Action),
     );
-    expect(actions).toEqual(['dynamodb:UpdateItem']);
+    expect(actions.sort()).toEqual([...(expected as string[])].sort());
   });
 });
