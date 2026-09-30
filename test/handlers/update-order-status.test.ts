@@ -1,6 +1,6 @@
 import { mockClient } from 'aws-sdk-client-mock';
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { handler } from '../../src/handlers/update-order-status';
 import { apiEvent, parseBody } from '../helpers';
 
@@ -66,12 +66,37 @@ describe('PUT /orders/{orderId}/status', () => {
     expect(parseBody<{ message: string }>(res).message).toContain('CANCELLED');
   });
 
-  it.each(['PENDING', 'CANCELLED'])('returns 409 for %s, which no transition ends at', async (to) => {
+  it.each(['PENDING', 'CANCELLED'])('returns 409 for %s when the order exists, since no transition ends there', async (to) => {
+    ddbMock.on(GetCommand).resolves({ Item: { orderId: 'ord-1', status: 'PAID' } });
+
     const res = await put({ status: to });
 
     expect(res.statusCode).toBe(409);
     expect(parseBody<{ message: string }>(res).message).toContain(to);
+    expect(parseBody<{ message: string }>(res).message).toContain('PAID');
     expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(0);
+
+    const input = ddbMock.commandCalls(GetCommand)[0].args[0].input;
+    expect(input.TableName).toBe('orders-test');
+    expect(input.Key).toEqual({ orderId: 'ord-1' });
+  });
+
+  it.each(['PENDING', 'CANCELLED'])('returns 404 for %s when the order does not exist', async (to) => {
+    ddbMock.on(GetCommand).resolves({});
+
+    const res = await put({ status: to }, 'missing');
+
+    expect(res.statusCode).toBe(404);
+    expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(0);
+  });
+
+  it('returns 500 when the existence check for a dead-end status fails', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    ddbMock.on(GetCommand).rejects(new Error('boom'));
+
+    const res = await put({ status: 'CANCELLED' });
+
+    expect(res.statusCode).toBe(500);
   });
 
   it('returns 404 when the order does not exist', async () => {

@@ -1,6 +1,6 @@
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
-import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import type { OrderStatus } from '../model';
 import { ddb, tableName } from '../lib/db';
 import { badRequest, json, notFound, serverError, type HttpResult } from '../lib/http';
@@ -36,9 +36,24 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<HttpResult
 
   const from = ALLOWED_SOURCE[status];
   if (!from) {
-    // No transition ends at this status, so the order is never read: the answer is the
-    // same whatever state it is in, and a missing order cannot make this request legal.
-    return json(409, { message: `an order cannot be changed to ${status}` });
+    // No transition ends at this status, so there is nothing to write. The order is still
+    // read so a missing order answers 404 rather than 409.
+    try {
+      const existing = await ddb.send(
+        new GetCommand({
+          TableName: tableName('ORDERS_TABLE'),
+          Key: { orderId },
+          ProjectionExpression: 'orderId, #status',
+          ExpressionAttributeNames: { '#status': 'status' },
+        }),
+      );
+      if (!existing.Item) {
+        return notFound('order not found');
+      }
+      return json(409, { message: `an order cannot go from ${existing.Item.status} to ${status}` });
+    } catch (err) {
+      return serverError(err);
+    }
   }
 
   try {

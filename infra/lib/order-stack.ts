@@ -53,7 +53,7 @@ export class OrderStack extends Stack {
 
     orders.grantWriteData(createOrder);
     orders.grant(updateOrderAddress, 'dynamodb:UpdateItem');
-    orders.grant(updateOrderStatus, 'dynamodb:UpdateItem');
+    orders.grant(updateOrderStatus, 'dynamodb:UpdateItem', 'dynamodb:GetItem');
     orders.grantReadData(getOrder);
     orders.grantReadData(listOrders);
     shipments.grantReadData(listShipments);
